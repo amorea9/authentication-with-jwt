@@ -13,7 +13,7 @@ function LogIn(props: any) {
         <input id="password" type="text" name="password" placeholder="Enter your password" onChange={(e) => props.handlePassword(e)} />
       </label>
 
-      <button type="submit">Submit & go to cats </button>
+      <button type="submit">Submit & get cat facts</button>
     </form>
   );
 }
