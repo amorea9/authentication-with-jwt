@@ -1,6 +1,6 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { CatsFactService } from './catfacts.service';
-
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('catsfacts')
 export class CatfactsController {
   constructor(private catsFactsService: CatsFactService) {}
@@ -12,6 +12,7 @@ export class CatfactsController {
   getOneCatsFact(): string {
     return this.catsFactsService.getOneCatsFact();
   }
+  @UseGuards(JwtAuthGuard)
   @Get('catfact')
   getFact() {
     return this.catsFactsService.getFact();

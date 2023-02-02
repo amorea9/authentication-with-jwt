@@ -4,16 +4,18 @@ import "./globals.css";
 import { useState, useEffect } from "react";
 import Register from "@/components/Register";
 import LogIn from "@/components/LogIn";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Home(props: any) {
   const [result, setResult] = useState("");
-  const [registered, setRegistered] = useState(false);
+  const [userStatus, setUserStatus] = useState({
+    registered: false,
+    loggedIn: false,
+  });
   const [payload, setPayload] = useState({});
-  const router = useRouter();
+  const [catFacts, setCatFacts] = useState([]) as any;
+  type factObj = { _id: string; text: string };
 
   useEffect(() => {
     fetch("http://localhost:3001")
@@ -34,7 +36,7 @@ export default function Home(props: any) {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!registered) {
+    if (!userStatus.registered) {
       try {
         const response = await fetch("http://localhost:3001/auth/signup", {
           method: "POST",
@@ -43,10 +45,7 @@ export default function Home(props: any) {
         });
         const data = await response.json();
         console.log(data);
-        fetch("http://localhost:3001/auth/")
-          .then((response) => response.json())
-          .then((response) => console.log(response))
-          .catch((err) => console.error(err));
+        setUserStatus({ ...userStatus, registered: true });
       } catch (error) {
         console.error(error);
       }
@@ -58,7 +57,7 @@ export default function Home(props: any) {
           headers: { "Content-Type": "application/json" },
         });
         const data = await response.json();
-
+        setUserStatus({ ...userStatus, registered: true, loggedIn: true });
         if (data.error) {
           console.log(data.error);
           console.log("can't login");
@@ -67,41 +66,40 @@ export default function Home(props: any) {
           window.localStorage.setItem("token", data.accessToken);
           const token = localStorage.getItem("token");
           console.log(token);
-          if (token === null) {
-            console.log("token is null, go back to homepage");
-            router.push("/");
-          } else if (token) {
-            router.push("/catfacts");
-          }
         }
-        fetch("http://localhost:3001/auth/")
-          .then((response) => response.json())
-          .then((response) => console.log(response))
-          .catch((err) => console.error(err));
       } catch (error) {
         console.error("can't login");
       }
     }
   }
-  function goToCatFacts() {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : console.log("no token");
-    if (token) {
-      router.push("/catfacts");
-    } else {
-      console.log("you need to login first");
-      router.push("/");
-    }
+
+  async function getCatFacts() {
+    await fetch("http://localhost:3001/catsfacts/catfact", {
+      method: "GET",
+      //mode: "no-cors",
+      headers: {
+        Authorization: "Bearer " + localStorage.getItem("token"),
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setCatFacts(data);
+      });
   }
 
   return (
     <main className="main">
       <p>{result}</p>
       <h1>Want to see cat facts? Register or log in</h1>
-      <button onClick={() => setRegistered(false)}>Register</button>
-      <button onClick={() => setRegistered(true)}>I already have an account</button>
-      {!registered && <Register handleSubmit={handleSubmit} handleUserName={handleUserName} handlePassword={handlePassword} />}
-      {registered && <LogIn handleSubmit={handleSubmit} handleUserName={handleUserName} handlePassword={handlePassword} />}
-      <button onClick={goToCatFacts}>Go to cat facts</button>
+
+      {userStatus.registered === false && <Register handleSubmit={handleSubmit} handleUserName={handleUserName} handlePassword={handlePassword} />}
+      {userStatus.registered === true && <LogIn handleSubmit={handleSubmit} handleUserName={handleUserName} handlePassword={handlePassword} />}
+      <button onClick={() => setUserStatus({ ...userStatus, registered: false })}>Register</button>
+      <button onClick={() => setUserStatus({ ...userStatus, registered: true })}>I already have an account</button>
+      <h1 className="text-4xl text-white">Cat facts</h1>
+      <div>{catFacts.statusCode !== 401 ? catFacts.map((fact: factObj) => <p key={fact._id}>{fact.text}</p>) : null}</div>
+
+      <button onClick={getCatFacts}>Get daily cat facts</button>
     </main>
   );
 }

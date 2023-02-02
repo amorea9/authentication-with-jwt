@@ -1,13 +1,18 @@
-import { Controller, Post, Get } from '@nestjs/common';
+import { Controller, Post, Get, UseGuards } from '@nestjs/common';
 import { Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthSignUpDto } from './dto/auth-signup.dto';
 import { UserJwtResponse } from './user-jwt-response.interface';
 import { AuthSignInDto } from './dto/auth-signin.dto';
+import { LocalStrategy } from './strategies/local.strategy';
+import { LocalAuthGuard } from './guards/local-auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private localStrategy: LocalStrategy,
+  ) {}
   //signing up
   @Post('/signup')
   async signUp(@Body() authSignUpDto: AuthSignUpDto): Promise<string> {
@@ -17,7 +22,7 @@ export class AuthController {
   //signing in and authorise
   @Post('/signin')
   async signIn(@Body() authSignInDto: AuthSignInDto): Promise<UserJwtResponse> {
-    return this.authService.signInAuth(authSignInDto);
+    return this.localStrategy.signInAuth(authSignInDto);
   }
   @Get()
   getUsers() {
