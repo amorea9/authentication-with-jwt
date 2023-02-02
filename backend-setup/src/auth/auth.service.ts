@@ -48,7 +48,9 @@ export class AuthService {
   async signIn(authSignInDto: AuthSignInDto): Promise<SignInResponseDto> {
     const { username, password } = authSignInDto;
     //find the right user
-    const user = await User.findOne({ where: { username: username } });
+    const user = await User.findOne({
+      where: { username: username },
+    });
     //if the user exists and the password is correct, return the user
     if (user && user.validatePassword(password)) {
       const userResponse = new SignInResponseDto();

@@ -2,16 +2,19 @@
 import { Inter } from "@next/font/google";
 import "./globals.css";
 import { useState, useEffect } from "react";
+import Register from "@/components/Register";
+import LogIn from "@/components/LogIn";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Home(props: any) {
   const [result, setResult] = useState("");
-  const [catFacts, setCatFacts] = useState([]);
   const [registered, setRegistered] = useState(false);
   const [payload, setPayload] = useState({});
+  const router = useRouter();
 
-  type factObj = { _id: string; text: string };
   useEffect(() => {
     fetch("http://localhost:3001")
       .then((res) => res.text())
@@ -19,14 +22,6 @@ export default function Home(props: any) {
         setResult(data);
       });
   }, []);
-
-  const getCatFacts = () => {
-    fetch("http://localhost:3001/catsfacts/catfact")
-      .then((res) => res.json())
-      .then((data) => {
-        setCatFacts(data);
-      });
-  };
 
   function handleUserName(e: React.ChangeEvent<HTMLInputElement>) {
     let username = e.target.value;
@@ -48,7 +43,6 @@ export default function Home(props: any) {
         });
         const data = await response.json();
         console.log(data);
-
         fetch("http://localhost:3001/auth/")
           .then((response) => response.json())
           .then((response) => console.log(response))
@@ -64,56 +58,50 @@ export default function Home(props: any) {
           headers: { "Content-Type": "application/json" },
         });
         const data = await response.json();
-        console.log(data);
 
+        if (data.error) {
+          console.log(data.error);
+          console.log("can't login");
+        } else {
+          console.log(data);
+          window.localStorage.setItem("token", data.accessToken);
+          const token = localStorage.getItem("token");
+          console.log(token);
+          if (token === null) {
+            console.log("token is null, go back to homepage");
+            router.push("/");
+          } else if (token) {
+            router.push("/catfacts");
+          }
+        }
         fetch("http://localhost:3001/auth/")
           .then((response) => response.json())
           .then((response) => console.log(response))
           .catch((err) => console.error(err));
       } catch (error) {
-        console.error(error);
+        console.error("can't login");
       }
+    }
+  }
+  function goToCatFacts() {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : console.log("no token");
+    if (token) {
+      router.push("/catfacts");
+    } else {
+      console.log("you need to login first");
+      router.push("/");
     }
   }
 
   return (
     <main className="main">
       <p>{result}</p>
-      {catFacts ? catFacts.map((fact: factObj) => <p key={fact._id}>{fact.text}</p>) : null}
-      <button onClick={() => setRegistered(false)}>SignUp</button>
-      <button onClick={() => setRegistered(true)}>SignIn</button>
-      {!registered && (
-        <form onSubmit={handleSubmit}>
-          <h1>Register</h1>
-          <label htmlFor="username">
-            Username
-            <input id="username" name="username" type="text" placeholder="Enter your username" onChange={(e) => handleUserName(e)} />
-          </label>
-          <label htmlFor="password">
-            Password
-            <input id="password" type="text" name="password" placeholder="Enter your password" onChange={(e) => handlePassword(e)} />
-          </label>
-          <button type="submit">Submit</button>
-        </form>
-      )}
-      {registered && (
-        <form onSubmit={handleSubmit}>
-          <h1>Login</h1>
-          <label htmlFor="username">
-            Username
-            <input id="username" name="username" type="text" placeholder="Enter your username" onChange={(e) => handleUserName(e)} />
-          </label>
-          <label htmlFor="password">
-            Password
-            <input id="password" type="text" name="password" placeholder="Enter your password" onChange={(e) => handlePassword(e)} />
-          </label>
-          <button type="submit">Submit</button>
-        </form>
-      )}
-
-      <button className="p-4 border-2 bg-transparent border-white rounded-md hover:bg-pink-800 transition-all" onClick={() => getCatFacts()}>
-        Load cats facts for the day
-      </button>
+      <h1>Want to see cat facts? Register or log in</h1>
+      <button onClick={() => setRegistered(false)}>Register</button>
+      <button onClick={() => setRegistered(true)}>I already have an account</button>
+      {!registered && <Register handleSubmit={handleSubmit} handleUserName={handleUserName} handlePassword={handlePassword} />}
+      {registered && <LogIn handleSubmit={handleSubmit} handleUserName={handleUserName} handlePassword={handlePassword} />}
+      <button onClick={goToCatFacts}>Go to cat facts</button>
     </main>
   );
 }
