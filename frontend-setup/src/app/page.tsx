@@ -12,6 +12,7 @@ export default function Home(props: any) {
   const [userStatus, setUserStatus] = useState({
     registered: false,
     loggedIn: false,
+    permission: true,
   });
   const [payload, setPayload] = useState({});
   const [catFacts, setCatFacts] = useState([]) as any;
@@ -84,22 +85,59 @@ export default function Home(props: any) {
       .then((res) => res.json())
       .then((data) => {
         setCatFacts(data);
+        if (data.message === "Unauthorized") {
+          console.log(data.statusCode);
+          console.log("Unauthorized");
+          setUserStatus({ ...userStatus, permission: false });
+        } else {
+          setUserStatus({ ...userStatus, permission: true });
+        }
       });
+  }
+  function logOut() {
+    localStorage.removeItem("token");
+    setUserStatus({ ...userStatus, registered: false, loggedIn: false });
+    console.log("you are logged out");
   }
 
   return (
     <main className="main">
-      <p>{result}</p>
-      <h1>Want to see cat facts? Register or log in</h1>
+      <h1 className="mb-8">
+        Response from the server: <span className="text-purple-500">"{result}"</span>
+      </h1>
+      <h1 className="text-4xl">Want to see cat facts? </h1>
+
+      <div className="flex flex-row gap-4 justify-center items-center my-8">
+        <button className="bg-violet-500 px-4 py-2 rounded-md" onClick={() => setUserStatus({ ...userStatus, registered: false })}>
+          Register
+        </button>
+        <p>or</p>
+        <button className="bg-violet-500 px-4 py-2 rounded-md" onClick={() => setUserStatus({ ...userStatus, registered: true })}>
+          I already have an account
+        </button>
+      </div>
 
       {userStatus.registered === false && <Register handleSubmit={handleSubmit} handleUserName={handleUserName} handlePassword={handlePassword} />}
       {userStatus.registered === true && <LogIn handleSubmit={handleSubmit} handleUserName={handleUserName} handlePassword={handlePassword} />}
-      <button onClick={() => setUserStatus({ ...userStatus, registered: false })}>Register</button>
-      <button onClick={() => setUserStatus({ ...userStatus, registered: true })}>I already have an account</button>
-      <h1 className="text-4xl text-white">Cat facts</h1>
-      <div>{catFacts.statusCode !== 401 ? catFacts.map((fact: factObj) => <p key={fact._id}>{fact.text}</p>) : null}</div>
 
-      <button onClick={getCatFacts}>Get daily cat facts</button>
+      <h1 className="text-4xl text-white my-8">Cat facts</h1>
+      {catFacts.statusCode !== 401
+        ? catFacts.map((fact: factObj) => (
+            <p className="my-2" key={fact._id}>
+              {fact.text}
+            </p>
+          ))
+        : null}
+      <div className=" flex flex-col gap-4 mt-8 min-w-fit">
+        {userStatus.permission === false && <p className="text-red-600 italic">Register or sign in to see cat facts</p>}
+        <button className="bg-violet-500 px-4 py-2 rounded-md" onClick={getCatFacts}>
+          Get daily cat facts
+        </button>
+
+        <button className="bg-red-700 px-4 py-2 rounded-md" onClick={logOut}>
+          Log out
+        </button>
+      </div>
     </main>
   );
 }

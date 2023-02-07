@@ -1,12 +1,10 @@
-import { Controller, Post, Get, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get } from '@nestjs/common';
 import { Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthSignUpDto } from './dto/auth-signup.dto';
 import { UserJwtResponse } from './user-jwt-response.interface';
 import { AuthSignInDto } from './dto/auth-signin.dto';
 import { LocalStrategy } from './strategies/local.strategy';
-import { LocalAuthGuard } from './guards/local-auth.guard';
-
 @Controller('auth')
 export class AuthController {
   constructor(
